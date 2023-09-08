@@ -11,45 +11,64 @@ def to_torch(x):
 def to_numpy(x):
     return x.detach().numpy()
 
+figsize = (10, 7)
 
-def plot_data(X, y, X_test, y_test):
+def plot_data(X, y, X_test, y_test, ax=None):
+    ax_none=False
+    if ax is None:
+        ax_none=True
+        fig, ax = plt.subplots(figsize=figsize)
     clip_bound = 2.5
-    plt.xlim(0, 1)
-    plt.ylim(-clip_bound, clip_bound)
-    plt.scatter(X[:, 0], y, c='darkorange', s=40.0, label='training data points')
-    plt.plot(X_test, y_test, '--', color='royalblue', linewidth=2.0, label='Ground truth')
+    ax.set_xlim(0, 1)
+    ax.set_ylim(-clip_bound, clip_bound)
+    ax.scatter(X[:, 0], y, c='darkorange', s=40.0, label='training data points')
+    ax.plot(X_test, y_test, '--', color='royalblue', linewidth=2.0, label='Ground truth')
+    if ax_none:
+        plt.show()
 
-
-def plot_relu(bias, slope):
-    plt.scatter([-bias / slope], 0, c='darkgrey', s=40.0)
+def plot_relu(bias, slope, ax=None):
+    ax_none=False
+    if ax is None:
+        ax_none=True
+        fig, ax = plt.subplots(figsize=figsize)
+    ax.scatter([-bias / slope], 0, c='darkgrey', s=40.0)
     if slope > 0 and bias < 0:
-        plt.plot([0, -bias / slope, 1], [0, 0, slope * (1 - bias)], ':')
+        ax.plot([0, -bias / slope, 1], [0, 0, slope * (1 - bias)], ':')
     elif slope < 0 and bias > 0:
-        plt.plot([0, -bias / slope, 1], [-bias * slope, 0, 0], ':')
-
-
-def plot_relus(params):
+        ax.plot([0, -bias / slope, 1], [-bias * slope, 0, 0], ':')
+    if ax_none:
+        plt.show()
+def plot_relus(params, ax=None):
     slopes = to_numpy(params[0]).ravel()
     biases = to_numpy(params[1])
     for relu in range(biases.size):
-        plot_relu(biases[relu], slopes[relu])
+        plot_relu(biases[relu], slopes[relu], ax=ax)
 
-
-def plot_function(X_test, net):
+def plot_function(X_test, net, ax=None):
+    ax_none=False
+    if ax is None:
+        ax_none=True
+        fig, ax = plt.subplots(figsize=figsize)
     y_pred = net(to_torch(X_test))
-    plt.plot(X_test, to_numpy(y_pred), '-', color='forestgreen', label='prediction')
-
-
-def plot_update(X, y, X_test, y_test, net, state=None, optim='sgd'):
+    ax.plot(X_test, to_numpy(y_pred), '-', color='forestgreen', label='prediction')
+    if ax_none:
+        plt.show()
+        
+def plot_update(X, y, X_test, y_test, net, state=None, optim='sgd', ax=None):
+    ax_none=False
+    if ax is None:
+        ax_none=True
+        fig, ax = plt.subplots(figsize=figsize)
+        
     if state is not None:
         net.load_state_dict(state)
-    plt.figure(figsize=(10, 7))
-    plot_relus(list(net.parameters()))
-    plot_function(X_test, net)
-    plot_data(X, y, X_test, y_test)
-    plt.legend()
-    plt.title(optim)
-    plt.show()
+    plot_relus(list(net.parameters()), ax=ax)
+    plot_function(X_test, net, ax=ax)
+    plot_data(X, y, X_test, y_test, ax=ax)
+    ax.legend()
+    ax.set_title(optim)
+    if ax_none:
+        plt.show()
 
 
 def train_network(X, y, X_test, y_test, net: torch.nn.Module, optim, n_steps, save_every, initial_weights=None, verbose=False, optimizer='sgd', seed=0, ckpt_dir=None):
@@ -88,20 +107,25 @@ def train_network(X, y, X_test, y_test, net: torch.nn.Module, optim, n_steps, sa
     return history
 
 
-def plot_test_train_errors(history, optim='', plot_test=False, plot_train=False):
+def plot_test_train_errors(history, optim='', plot_test=False, plot_train=False, ax=None):
+    ax_none=False
+    if ax is None:
+        ax_none=True
+        fig, ax = plt.subplots(figsize=figsize)
     sample_points = np.array(list(history.keys()))
     etrain = [history[s]['train_error'] for s in history]
     etest = [history[s]['test_error'] for s in history]
     if plot_train:
-      plt.plot(sample_points / 1e3, etrain, label=f'Train Error {optim}')
+        ax.plot(sample_points / 1e3, etrain, label=f'Train Error {optim}')
     if plot_test:
-      plt.plot(sample_points / 1e3, etest, label=f'Test Error {optim}')
-    plt.xlabel("Iterations (1000's)")
-    plt.ylabel("MSE")
-    plt.yscale('log')
-    plt.legend()
-    # plt.show();
-
+        ax.plot(sample_points / 1e3, etest, label=f'Test Error {optim}')
+    ax.set_xlabel("Iterations (1000's)")
+    ax.set_ylabel("MSE")
+    ax.set_yscale('log')
+    ax.legend()
+    if ax_none:
+        plt.show()
+        
 TRANS = [0, 1, -1]
 
 def plot_with_error_bar(
@@ -109,8 +133,13 @@ def plot_with_error_bar(
         optim='', 
         plot_test=False, 
         plot_train=False,
-        idx=0
+        idx=0,
+        ax=None,
     ):
+    ax_none=False
+    if ax is None:
+        ax_none=True
+        fig, ax = plt.subplots(figsize=figsize)
     sample_points = np.array(list(list_of_history[0].keys()))
     etrain = [[hist[s]['train_error'] for s in hist] for hist in list_of_history]
     etest = [[hist[s]['test_error'] for s in hist] for hist in list_of_history]
@@ -124,24 +153,24 @@ def plot_with_error_bar(
     quantile_test = np.row_stack((lower_test, upper_test))
     
     if plot_train:
-        plt.errorbar(
+        ax.errorbar(
             sample_points / 1e3 + 0.2 * TRANS[idx], med_etrain, 
             yerr=quantile_train, fmt='-o', 
             label=f'Train Error {optim}', capsize=5
         )
     if plot_test:
-        plt.errorbar(
+        ax.errorbar(
             sample_points / 1e3 + 0.2 * TRANS[idx], med_etest, 
             yerr=quantile_test, fmt='-o', 
             label=f'Test Error {optim}', capsize=5
-        )
-    
-    plt.xlabel("Iterations (1000's)")
-    plt.ylabel("MSE")
-    plt.yscale('log')
-    plt.legend()
-
-
+        )    
+    ax.set_xlabel("Iterations (1000's)")
+    ax.set_ylabel("MSE")
+    ax.set_yscale('log')
+    ax.legend()
+    if ax_none:
+        plt.show()
+        
 def make_iter_slider(iters):
     # print(iters)
     return widgets.SelectionSlider(
